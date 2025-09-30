@@ -13,16 +13,17 @@ const os = require('os');
 const app = express();
 // Trust proxy to ensure req.protocol reflects X-Forwarded-Proto on Render/Proxies
 app.set('trust proxy', 1);
-// Configure CORS
+// Configure CORS (supports comma-separated origins)
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || '*';
-app.use(cors({ origin: CLIENT_ORIGIN, methods: ['GET', 'POST'] }));
+const ALLOWED_ORIGINS = CLIENT_ORIGIN.split(',').map(o => o.trim()).filter(Boolean);
+app.use(cors({ origin: CLIENT_ORIGIN === '*' ? '*' : ALLOWED_ORIGINS, methods: ['GET', 'POST'] }));
 app.use(express.json());
 
 // Create HTTP server and Socket.io instance
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: CLIENT_ORIGIN,
+    origin: CLIENT_ORIGIN === '*' ? '*' : ALLOWED_ORIGINS,
     methods: ["GET", "POST"]
   }
 });
@@ -47,7 +48,7 @@ const upload = multer({ storage });
 
 // Serve uploaded files with CORS headers
 app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Origin', CLIENT_ORIGIN === '*' ? '*' : (req.headers.origin || ''));
   res.header('Access-Control-Allow-Methods', 'GET');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   next();
