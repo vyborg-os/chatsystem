@@ -560,10 +560,13 @@ const Chat: React.FC = () => {
     }
     
     // Upload file with progress tracking
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
     const hostname = window.location.hostname;
+    const fallbackBase = `${protocol}//${hostname}:3001`;
+    const apiBase = (process.env.REACT_APP_SOCKET_URL || fallbackBase).replace(/\/$/, '');
     const xhr = new XMLHttpRequest();
     
-    xhr.open('POST', `http://${hostname}:5000/upload`, true);
+    xhr.open('POST', `${apiBase}/upload`, true);
     
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) {
@@ -753,9 +756,12 @@ const Chat: React.FC = () => {
     }
     
     // Upload voice note
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
     const hostname = window.location.hostname;
+    const fallbackBase = `${protocol}//${hostname}:3001`;
+    const apiBase = (process.env.REACT_APP_SOCKET_URL || fallbackBase).replace(/\/$/, '');
     try {
-      const response = await fetch(`http://${hostname}:5000/upload`, {
+      const response = await fetch(`${apiBase}/upload`, {
         method: 'POST',
         body: formData
       });

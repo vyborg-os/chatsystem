@@ -96,14 +96,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   // Initialize socket connection
   useEffect(() => {
-    // Get the hostname dynamically
+    // Determine backend URL
+    const defaultPort = 3001;
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
     const hostname = window.location.hostname;
-    const socketUrl = `http://${hostname}:3001`;
+    const fallbackUrl = `${protocol}//${hostname}:${defaultPort}`;
+    const socketUrl = (process.env.REACT_APP_SOCKET_URL || fallbackUrl).replace(/\/$/, '');
     
     console.log('Initializing socket connection to:', socketUrl);
     
     // Create socket connection
     const newSocket = io(socketUrl, {
+      transports: ['websocket'],
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       timeout: 10000

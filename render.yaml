@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: chatsystem-backend
+    env: node
+    plan: free
+    rootDir: nexus-chat/server
+    buildCommand: npm install
+    startCommand: node server.js
+    autoDeploy: true
+    disk:
+      name: uploads
+      mountPath: /opt/render/project/src/nexus-chat/server/uploads
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_ORIGIN
+        fromService:
+          type: static
+          name: chatsystem-frontend
+          property: url
+
+  - type: static
+    name: chatsystem-frontend
+    rootDir: nexus-chat
+    buildCommand: npm install && npm run build
+    publishPath: build
+    envVars:
+      - key: REACT_APP_SOCKET_URL
+        fromService:
+          type: web
+          name: chatsystem-backend
+          property: url

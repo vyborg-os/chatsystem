@@ -180,10 +180,13 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ socket, recipient, onBack
     formData.append('recipientId', recipient.id);
     
     // Upload file
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
     const hostname = window.location.hostname;
+    const fallbackBase = `${protocol}//${hostname}:3001`;
+    const apiBase = (process.env.REACT_APP_SOCKET_URL || fallbackBase).replace(/\/$/, '');
     const xhr = new XMLHttpRequest();
     
-    xhr.open('POST', `http://${hostname}:5000/upload`, true);
+    xhr.open('POST', `${apiBase}/upload`, true);
     
     xhr.onload = () => {
       if (xhr.status === 200) {
@@ -254,10 +257,13 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ socket, recipient, onBack
         formData.append('recipientId', recipient.id);
         
         // Upload file
+        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
         const hostname = window.location.hostname;
+        const fallbackBase = `${protocol}//${hostname}:3001`;
+        const apiBase = (process.env.REACT_APP_SOCKET_URL || fallbackBase).replace(/\/$/, '');
         const xhr = new XMLHttpRequest();
         
-        xhr.open('POST', `http://${hostname}:5000/upload`, true);
+        xhr.open('POST', `${apiBase}/upload`, true);
         
         xhr.onload = () => {
           if (xhr.status === 200) {

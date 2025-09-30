@@ -11,14 +11,18 @@ const os = require('os');
 
 // Create Express app
 const app = express();
-app.use(cors());
+// Trust proxy to ensure req.protocol reflects X-Forwarded-Proto on Render/Proxies
+app.set('trust proxy', 1);
+// Configure CORS
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || '*';
+app.use(cors({ origin: CLIENT_ORIGIN, methods: ['GET', 'POST'] }));
 app.use(express.json());
 
 // Create HTTP server and Socket.io instance
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "*",
+    origin: CLIENT_ORIGIN,
     methods: ["GET", "POST"]
   }
 });
@@ -953,16 +957,23 @@ app.post('/upload', upload.single('file'), (req, res) => {
     return res.status(400).json({ error: 'No file uploaded' });
   }
   
-  // Use absolute URL with hostname for file downloads
-  const hostname = req.get('host') || 'localhost:5000';
-  const protocol = req.protocol || 'http';
-  const fileUrl = `${protocol}://${hostname}/uploads/${req.file.filename}`;
+  // Build absolute URL for file downloads; honor proxy headers
+  const xfProto = req.headers['x-forwarded-proto'];
+  const xfHost = req.headers['x-forwarded-host'];
+  const protocol = (Array.isArray(xfProto) ? xfProto[0] : xfProto) || req.protocol || 'http';
+  const host = (Array.isArray(xfHost) ? xfHost[0] : xfHost) || req.get('host') || 'localhost:3001';
+  const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
   
   res.json({
     fileUrl,
     fileName: req.file.originalname,
     fileSize: req.file.size
   });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
 });
 
 // Get all users
