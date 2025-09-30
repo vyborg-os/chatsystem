@@ -1235,7 +1235,13 @@ const Chat: React.FC = () => {
                   }}
                 >
                   <img 
-                    src={message.fileUrl?.startsWith('http') ? message.fileUrl : `http://${window.location.hostname}:5000${message.fileUrl}`}
+                    src={(function(){
+                      const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+                      const hostname = window.location.hostname;
+                      const fallbackBase = `${protocol}//${hostname}:3001`;
+                      const apiBase = (process.env.REACT_APP_SOCKET_URL || fallbackBase).replace(/\/$/, '');
+                      return message.fileUrl?.startsWith('http') ? message.fileUrl! : `${apiBase}${message.fileUrl}`;
+                    })()}
                     alt={message.fileName}
                     style={{ 
                       maxWidth: '100%', 
@@ -1266,7 +1272,13 @@ const Chat: React.FC = () => {
                   }}
                 >
                   <video 
-                    src={message.fileUrl?.startsWith('http') ? message.fileUrl : `http://${window.location.hostname}:5000${message.fileUrl}`}
+                    src={(function(){
+                      const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+                      const hostname = window.location.hostname;
+                      const fallbackBase = `${protocol}//${hostname}:3001`;
+                      const apiBase = (process.env.REACT_APP_SOCKET_URL || fallbackBase).replace(/\/$/, '');
+                      return message.fileUrl?.startsWith('http') ? message.fileUrl! : `${apiBase}${message.fileUrl}`;
+                    })()}
                     style={{ 
                       maxWidth: '100%', 
                       maxHeight: '200px', 
