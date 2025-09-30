@@ -107,10 +107,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Create socket connection
     const newSocket = io(socketUrl, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
+      upgrade: true,
+      path: '/socket.io',
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-      timeout: 10000
+      timeout: 20000
     });
     
     socketRef.current = newSocket;
