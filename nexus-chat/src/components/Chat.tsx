@@ -97,10 +97,12 @@ const Chat: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<ChatUser | null>(null);
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null);
   const [showGameBot, setShowGameBot] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(true);
   
   // Refs
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -207,8 +209,8 @@ const Chat: React.FC = () => {
       setLoading(true);
     });
     
-    // Listen for direct messages
-    socket.on('directMessage', (message: Message) => {
+    // Listen for direct messages (only update unread counts here; DM view handles its own list)
+    const onDirectMessage = (message: Message) => {
       // If message is from someone else and we're not in that DM, increment unread count
       if (message.userId !== socketRef.current?.id && message.userId !== user?.id) {
         // Update users list with unread count
@@ -231,7 +233,8 @@ const Chat: React.FC = () => {
           });
         });
       }
-    });
+    };
+    socket.on('directMessage', onDirectMessage);
     
     // Handle messages
     socket.on('message', (newMessage: Message) => {
@@ -412,10 +415,10 @@ const Chat: React.FC = () => {
     // Clean up on unmount
     return () => {
       if (socketRef.current) {
-        // Remove all event listeners
+        // Remove only listeners we added in this component
         socket.off('registrationFailed');
         socket.off('disconnect');
-        socket.off('directMessage');
+        socket.off('directMessage', onDirectMessage);
         socket.off('message');
         socket.off('messageReactionUpdated');
         socket.off('messageUpdated');
@@ -432,10 +435,21 @@ const Chat: React.FC = () => {
     };
   }, [user, logout, updateProfile, users]);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change, only if user is at bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, messagesEndRef]);
+    if (autoScroll) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, autoScroll]);
+
+  // Track scroll to toggle auto-scroll
+  const handleMessagesScroll = () => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const threshold = 100; // px from bottom to consider "at bottom"
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+    setAutoScroll(atBottom);
+  };
 
   // State for user mentions
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1486,7 +1500,11 @@ return (
         ) : (
           <>
             {/* Messages */}
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+            <Box
+              ref={messagesContainerRef}
+              onScroll={handleMessagesScroll}
+              sx={{ flexGrow: 1, overflowY: 'auto', p: 2, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+            >
               {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                   <CircularProgress />
