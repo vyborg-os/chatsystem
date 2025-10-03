@@ -186,6 +186,16 @@ class GameBot {
       };
     }
 
+    // Prevent duplicates across different users in the same game
+    const existing = this.currentGame.submissions.find(s => s.word === upperWord);
+    if (existing) {
+      return {
+        success: false,
+        message: `❌ "${word}" has already been picked by ${existing.username}`,
+        isGameSubmission: true
+      };
+    }
+
     // Calculate points (longer words = more points)
     const points = this.calculatePoints(upperWord);
     participant.score += points;
