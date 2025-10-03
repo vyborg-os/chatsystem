@@ -353,6 +353,10 @@ io.on('connection', (socket) => {
       status: 'online'
     };
     
+    // Store username on the socket for reliable retrieval in other events (e.g., GameBot)
+    socket.data = socket.data || {};
+    socket.data.username = displayName;
+
     // Store user in users object
     users[userId] = user;
     
@@ -435,6 +439,10 @@ io.on('connection', (socket) => {
       status: 'online'
     };
     
+    // Store username on the socket for reliable retrieval in other events (e.g., GameBot)
+    socket.data = socket.data || {};
+    socket.data.username = username;
+
     // console.log(`User registered: ${username}`);
     io.emit('userJoined', { users: Object.values(users) });
     
@@ -602,6 +610,7 @@ io.on('connection', (socket) => {
     
     const { word } = data;
     const user = users[socket.id];
+    const effectiveUsername = (user && user.username) || (socket.data && socket.data.username);
     
     if (!gameBot.isActive) {
       console.log('Game not active - sending failure response');
@@ -627,7 +636,15 @@ io.on('connection', (socket) => {
     console.log('Current game letters:', gameBot.currentGame?.letters);
     
     try {
-      const wordSubmission = gameBot.submitWord(socket.id, user?.username || 'Anonymous', word.trim());
+      if (!effectiveUsername) {
+        socket.emit('gameSubmission', {
+          success: false,
+          message: 'Please login to play the game',
+          isGameSubmission: true
+        });
+        return;
+      }
+      const wordSubmission = gameBot.submitWord(socket.id, effectiveUsername, word.trim());
       console.log('Word submission result:', wordSubmission);
       console.log('Sending gameSubmission event to client');
       
@@ -638,7 +655,7 @@ io.on('connection', (socket) => {
       if (wordSubmission.success) {
         console.log('Broadcasting score update to all clients');
         io.emit('gameScoreUpdate', {
-          username: user?.username || 'Anonymous',
+          username: effectiveUsername,
           word: word.trim(),
           points: wordSubmission.points,
           totalScore: wordSubmission.totalScore
