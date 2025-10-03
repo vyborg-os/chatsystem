@@ -59,6 +59,7 @@ import DoneAllIcon from '@mui/icons-material/DoneAll';
 import LinkIcon from '@mui/icons-material/Link';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ChatIcon from '@mui/icons-material/Chat';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Picker, { EmojiClickData } from 'emoji-picker-react';
 import LinkPreview from './LinkPreview';
 import MessageReactions from './MessageReactions';
@@ -1396,14 +1397,24 @@ const Chat: React.FC = () => {
 };
 
 return (
-  <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+  <Box sx={{ height: { xs: '100dvh', sm: '100vh' }, display: 'flex', flexDirection: 'column' }}>
     {/* App Bar */}
-    <AppBar position="static" elevation={0} sx={{ 
-      background: 'linear-gradient(45deg, #6366f1 30%, #818cf8 90%)'
+    <AppBar position="sticky" elevation={0} sx={{ 
+      background: 'linear-gradient(45deg, #6366f1 30%, #818cf8 90%)',
+      top: 0,
+      zIndex: (theme) => theme.zIndex.drawer + 1
     }}>
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          NexusChat
+        {(selectedUser || showGameBot) && (
+          <IconButton edge="start" color="inherit" onClick={() => {
+            if (selectedUser) setSelectedUser(null);
+            if (showGameBot) setShowGameBot(false);
+          }} sx={{ mr: 1 }}>
+            <ArrowBackIcon />
+          </IconButton>
+        )}
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {selectedUser ? selectedUser.username : showGameBot ? 'Game Bot' : 'NexusChat'}
         </Typography>
         
         <Tooltip title="Toggle Dark Mode">
@@ -1461,9 +1472,9 @@ return (
     </AppBar>
     
     {/* Main content */}
-    <Grid container sx={{ flexGrow: 1, overflow: 'hidden' }}>
+    <Grid container sx={{ flexGrow: 1, overflow: 'hidden', minHeight: 0 }}>
       {/* Chat area */}
-      <Grid item xs={showUserList ? 9 : 12} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Grid item xs={showUserList ? 9 : 12} sx={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {selectedUser ? (
           <DirectMessage 
             socket={socketRef.current} 
@@ -1475,7 +1486,7 @@ return (
         ) : (
           <>
             {/* Messages */}
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2, scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
               {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                   <CircularProgress />
@@ -1644,7 +1655,7 @@ return (
       
       {/* User list sidebar */}
       {showUserList && (
-        <Grid item xs={3} sx={{ height: '100%', borderLeft: 1, borderColor: 'divider', overflow: 'auto' }}>
+        <Grid item xs={3} sx={{ height: '100%', borderLeft: 1, borderColor: 'divider', overflow: 'auto', minHeight: 0 }}>
           <List>
             <ListItem>
               <Typography variant="h6">Users ({users.length})</Typography>
